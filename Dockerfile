@@ -30,4 +30,11 @@ RUN a2enmod rewrite headers && \
     } > /etc/apache2/conf-available/z-allowoverride.conf && \
     a2enconf z-allowoverride
 
+# "Payment failed: Storage error" = PHP couldn't open data/ledger.json
+# for writing. COPY brings files in owned by root; Apache's worker
+# processes run as www-data, which then can't write to it. This is
+# the fix — give www-data ownership of the one folder PHP actually
+# writes to (nothing else needs to be writable).
+RUN chown -R www-data:www-data /var/www/html/data
+
 EXPOSE 80
