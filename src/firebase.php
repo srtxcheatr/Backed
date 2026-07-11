@@ -132,6 +132,40 @@ function firebase_email(): string {
 }
 
 /**
+ * Call at the top of any admin-only endpoint. Exits with 401 unless
+ * the X-Admin-Secret header matches the ADMIN_SECRET environment
+ * variable. hash_equals() (not ==) so comparing the secret can't leak
+ * timing information about how much of it was guessed correctly.
+ */
+function require_admin(): void {
+  $expected = getenv('ADMIN_SECRET');
+  $given = $_SERVER['HTTP_X_ADMIN_SECRET'] ?? '';
+  if (!$expected || !hash_equals($expected, $given)) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Not authorized']);
+    exit;
+  }
+}
+
+/**
+ * CORS for admin endpoints specifically. These are protected by
+ * ADMIN_SECRET (a header only your admin page knows), not by cookies
+ * or origin — so unlike apply_cors(), it's fine to allow any origin
+ * here. You'll likely open admin.html from more than one place (a
+ * code editor's preview, a real domain later, etc.) and a fixed
+ * allow-list would just be friction with no real security benefit.
+ */
+function apply_admin_cors(): void {
+  header('Access-Control-Allow-Origin: *');
+  header('Access-Control-Allow-Headers: Content-Type, X-Admin-Secret');
+  header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+  if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+  }
+}
+
+/**
  * Your frontend and this backend are on different domains, so every
  * request is cross-origin — the browser blocks it unless this backend
  * explicitly allows the frontend's origin.
