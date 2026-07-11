@@ -55,9 +55,12 @@ function notify_purchase(string $uid, string $email, string $buyerName, array $p
   ]));
 }
 
-$outcome = with_ledger(function (&$ledger) use ($uid, $product, $sku, $buyerName, $waNum) {
+$outcome = with_ledger(function (&$ledger) use ($uid, $email, $product, $sku, $buyerName, $waNum) {
   if (!isset($ledger['users'][$uid])) {
-    $ledger['users'][$uid] = ['balance' => 0, 'purchases' => []];
+    $ledger['users'][$uid] = ['balance' => 0, 'purchases' => [], 'adminLog' => []];
+  }
+  if ($email !== '') {
+    $ledger['users'][$uid]['email'] = $email;
   }
   $balance = (int)$ledger['users'][$uid]['balance'];
 
