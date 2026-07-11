@@ -8,10 +8,14 @@ apply_cors();
 header('Content-Type: application/json');
 
 $uid = require_firebase_uid();
+$email = firebase_email();
 
-$balance = with_ledger(function (&$ledger) use ($uid) {
+$balance = with_ledger(function (&$ledger) use ($uid, $email) {
   if (!isset($ledger['users'][$uid])) {
-    $ledger['users'][$uid] = ['balance' => 0, 'purchases' => []];
+    $ledger['users'][$uid] = ['balance' => 0, 'purchases' => [], 'adminLog' => []];
+  }
+  if ($email !== '') {
+    $ledger['users'][$uid]['email'] = $email;
   }
   return (int)$ledger['users'][$uid]['balance'];
 });
